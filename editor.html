@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>愛的日曆｜編輯</title>
+  <style>
+    :root{
+      --bg:#0b0b10;
+      --panel:#11111a;
+      --panel2:#151522;
+      --text:#f2f2f7;
+      --muted:#a7a7b7;
+      --line:#25253a;
+      --accent:#7c5cff;
+      --accent2:#ff5c8a;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#f7f7fb;
+        --panel:#ffffff;
+        --panel2:#fbfbff;
+        --text:#11111a;
+        --muted:#6b6b7a;
+        --line:#e6e6f0;
+        --shadow: 0 12px 30px rgba(0,0,0,.08);
+      }
+    }
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans TC", Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(124,92,255,.25), transparent 55%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(255,92,138,.18), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .app{
+      width: min(1024px, 100%);
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.12fr .88fr;
+      align-items: start;
+    }
+    @media (max-width: 900px){
+      .app{ grid-template-columns: 1fr; }
+    }
+    .card{
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    header{
+      display:flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+    .title{
+      display:flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    #monthTitle{
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      line-height: 1.2;
+      margin:0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .subtitle{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .controls{
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .controlsRow{
+      display:flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .chip{
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .navBtn{
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 900;
+      letter-spacing: .2px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .navBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(124,92,255,.6);
+      background: rgba(124,92,255,.08);
+    }
+    .monthPicker{
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      min-height: 34px;
+    }
+    .monthPicker:focus-visible{
+      outline: 3px solid rgba(124,92,255,.35);
+      outline-offset: 2px;
+    }
+    a.linkBtn{
+      text-decoration: none;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      border: 1px solid rgba(124,92,255,.65);
+      background: rgba(124,92,255,.12);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    a.linkBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(124,92,255,.85);
+      background: rgba(124,92,255,.18);
+    }
+
+    .calendar{
+      padding: 14px 14px 18px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+    .dow{
+      text-align:center;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 8px 0 10px;
+      user-select:none;
+    }
+    .day{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      color: var(--text);
+      cursor: pointer;
+      display:flex;
+      align-items: center;
+      justify-content:center;
+      font-size: 14px;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      user-select:none;
+    }
+    .day:hover{
+      transform: translateY(-1px);
+      border-color: rgba(124,92,255,.55);
+      background: rgba(124,92,255,.08);
+    }
+    .day:focus-visible{
+      outline: 3px solid rgba(124,92,255,.35);
+      outline-offset: 2px;
+    }
+    .blank{
+      border: 1px dashed rgba(255,255,255,.06);
+      background: transparent;
+      cursor: default;
+      opacity: .35;
+    }
+    @media (prefers-color-scheme: light){
+      .blank{ border-color: rgba(17,17,26,.15); }
+    }
+    .weekend{ border-color: rgba(255,92,138,.35); }
+    .today::after{
+      content:"";
+      position:absolute;
+      bottom: 10px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      opacity: .9;
+    }
+    .selected{
+      border-color: rgba(124,92,255,.9);
+      background: rgba(124,92,255,.14);
+      box-shadow: 0 8px 18px rgba(124,92,255,.14);
+      transform: translateY(-1px);
+    }
+    .hasNote::before{
+      content:"";
+      position:absolute;
+      top: 10px;
+      right: 10px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(124,92,255,.9);
+      opacity: .9;
+    }
+
+    .note{
+      padding: 18px;
+      display:flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .note h2{
+      margin:0;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+    .meta{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: -4px;
+      line-height: 1.4;
+    }
+    .note-display{
+      min-height: 120px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255,255,255,.02);
+      white-space: pre-wrap;
+      line-height: 1.7;
+      position: relative;
+    }
+    .note-display[data-empty="1"]::before{
+      content: "點日期後，這裡會顯示那天的字條。";
+      color: rgba(167,167,183,.9);
+    }
+    textarea{
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.02);
+      color: var(--text);
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+    textarea:focus-visible{
+      outline: 3px solid rgba(124,92,255,.35);
+      outline-offset: 2px;
+    }
+    .actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    button.action{
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 850;
+      letter-spacing: .2px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    button.action:hover{
+      transform: translateY(-1px);
+      border-color: rgba(124,92,255,.6);
+      background: rgba(124,92,255,.08);
+    }
+    button.action.primary{
+      border-color: rgba(124,92,255,.75);
+      background: rgba(124,92,255,.16);
+    }
+    button.action.danger{
+      border-color: rgba(255,92,138,.6);
+      background: rgba(255,92,138,.10);
+    }
+    button.action.ghost{
+      background: transparent;
+    }
+    .divider{
+      width: 100%;
+      height: 1px;
+      background: var(--line);
+      margin: 6px 0;
+      opacity: .9;
+      flex-basis: 100%;
+    }
+    .status{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.02);
+    }
+    .status.ok{ border-color: rgba(124,92,255,.35); }
+    .status.warn{ border-color: rgba(255,92,138,.35); }
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .tiny{
+      font-size: 11px;
+      color: var(--muted);
+      opacity: .95;
+      line-height: 1.45;
+    }
+    code.kbd{
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.03);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 11px;
+    }
+    .sr-only{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card" aria-label="月曆（編輯）">
+      <header>
+        <div class="title">
+          <h1 id="monthTitle">—</h1>
+          <div class="subtitle">這頁才是「寫 / 匯入 / 匯出」。寫完後回到使用頁就好。</div>
+        </div>
+
+        <div class="controls">
+          <div class="controlsRow">
+            <button class="navBtn" id="prevMonthBtn" type="button" aria-label="上一個月">←</button>
+            <button class="navBtn" id="nextMonthBtn" type="button" aria-label="下一個月">→</button>
+            <input class="monthPicker" id="monthPicker" type="month" aria-label="跳到指定月份" />
+            <a class="linkBtn" id="openViewerLink" href="./index.html" target="_blank" rel="noopener">開啟使用</a>
+          </div>
+          <div class="controlsRow">
+            <span class="chip" id="weekStartChip"></span>
+            <span class="chip" id="noteSourceChip"></span>
+            <span class="chip" id="overrideChip"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="calendar">
+        <div id="calendarGrid" class="grid" aria-label="日曆格子"></div>
+      </div>
+    </section>
+
+    <aside class="card note" aria-label="字條（編輯）">
+      <h2 id="selectedDateLabel">選一天</h2>
+      <div class="meta" id="selectedDateMeta"></div>
+
+      <div id="noteDisplay" class="note-display" data-empty="1" aria-live="polite"></div>
+
+      <label for="noteEditor" class="sr-only">編輯字條</label>
+      <textarea id="noteEditor" placeholder="在這裡寫那段話"></textarea>
+
+      <div class="actions">
+        <button class="action primary" id="saveBtn" type="button">保存到本地</button>
+        <button class="action danger" id="clearBtn" type="button">清除此日本地</button>
+
+        <div class="divider"></div>
+
+        <button class="action" id="reloadJsonBtn" type="button">重載 notes.json</button>
+        <button class="action" id="exportFlatBtn" type="button">匯出 JSON（按日期）</button>
+        <button class="action" id="exportMonthBtn" type="button">匯出 JSON（按月份）</button>
+        <button class="action ghost" id="importJsonBtn" type="button">匯入 JSON</button>
+        <input id="importFileInput" type="file" accept="application/json" class="sr-only" />
+      </div>
+
+      <div class="status" id="statusBox"></div>
+
+      <div class="hint">
+        <div>字條來源：先讀 <code class="kbd">notes.json</code>，你在這裡「保存」的是本機瀏覽器的覆蓋。</div>
+        <div class="tiny">要把本地覆蓋變成檔案：按「匯出 JSON」下載，取代原本的 <code class="kbd">notes.json</code>。</div>
+        <div class="tiny">注意：用 <code class="kbd">file://</code> 直接開，可能讀不到 <code class="kbd">notes.json</code>，請用 Live Server 或 <code class="kbd">python -m http.server</code>。</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // ===== 設定 =====
+    const config = {
+      defaultMonth: 2,
+      weekStartsOnMonday: true,
+      notesJsonPath: "./notes.json",
+      overridesStorageKey: "loveCalendar:overrides:v1"
+    };
+
+    // ===== 狀態 =====
+    let viewYear = null;
+    let viewMonth = null; // 1-12
+    let selectedDate = null;
+
+    let notesFile = {};      // normalize 後的 {YYYY-MM-DD: text}
+    let notesOverride = {};  // localStorage 覆蓋（你保存的）
+
+    // ===== DOM =====
+    const $ = (sel) => document.querySelector(sel);
+
+    const monthTitleEl = $("#monthTitle");
+    const weekStartChipEl = $("#weekStartChip");
+    const noteSourceChipEl = $("#noteSourceChip");
+    const overrideChipEl = $("#overrideChip");
+
+    const prevMonthBtn = $("#prevMonthBtn");
+    const nextMonthBtn = $("#nextMonthBtn");
+    const monthPickerEl = $("#monthPicker");
+
+    const calendarGridEl = $("#calendarGrid");
+
+    const selectedDateLabelEl = $("#selectedDateLabel");
+    const selectedDateMetaEl = $("#selectedDateMeta");
+    const noteDisplayEl = $("#noteDisplay");
+    const noteEditorEl = $("#noteEditor");
+
+    const openViewerLink = $("#openViewerLink");
+
+    const saveBtn = $("#saveBtn");
+    const clearBtn = $("#clearBtn");
+
+    const reloadJsonBtn = $("#reloadJsonBtn");
+    const exportFlatBtn = $("#exportFlatBtn");
+    const exportMonthBtn = $("#exportMonthBtn");
+    const importJsonBtn = $("#importJsonBtn");
+    const importFileInput = $("#importFileInput");
+
+    const statusBox = $("#statusBox");
+
+    // ===== 小工具 =====
+    function pad2(n){ return String(n).padStart(2, "0"); }
+    function isoDate(y, m, d){ return `${y}-${pad2(m)}-${pad2(d)}`; }
+    function formatDateLabel(dateStr){ return dateStr.replaceAll("-", "/"); }
+    function daysInMonth(y, m){ return new Date(y, m, 0).getDate(); }
+    function isWeekend(y, m, d){
+      const dow = new Date(y, m - 1, d).getDay();
+      return dow === 0 || dow === 6;
+    }
+    function weekdayHeaders(){
+      return config.weekStartsOnMonday
+        ? ["一","二","三","四","五","六","日"]
+        : ["日","一","二","三","四","五","六"];
+    }
+    function firstDayOffset(y, m){
+      const dow = new Date(y, m - 1, 1).getDay();
+      if (!config.weekStartsOnMonday) return dow;
+      return (dow + 6) % 7;
+    }
+    function setStatus(msg, kind="ok"){
+      statusBox.textContent = msg;
+      statusBox.classList.remove("ok", "warn");
+      statusBox.classList.add(kind === "warn" ? "warn" : "ok");
+    }
+    function normalizeDateStr(s){
+      if (typeof s !== "string") return null;
+      const t = s.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+      const m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m) return `${m[1]}-${pad2(Number(m[2]))}-${pad2(Number(m[3]))}`;
+      return null;
+    }
+    function normalizeYearMonthStr(s){
+      if (typeof s !== "string") return null;
+      const t = s.trim();
+      if (/^\d{4}-\d{2}$/.test(t)) return t;
+      const m = t.match(/^(\d{4})-(\d{1,2})$/);
+      if (m) return `${m[1]}-${pad2(Number(m[2]))}`;
+      return null;
+    }
+
+    function normalizeNotesData(data){
+      const out = {};
+      const add = (dateLike, text) => {
+        const dateStr = normalizeDateStr(String(dateLike ?? ""));
+        if (!dateStr) return;
+        const t = String(text ?? "");
+        if (!t.trim()) return;
+        out[dateStr] = t;
+      };
+
+      // A) Array: [{date,text}] or [[date,text]]
+      if (Array.isArray(data)){
+        for (const item of data){
+          if (Array.isArray(item) && item.length >= 2){
+            add(item[0], item[1]);
+            continue;
+          }
+          if (item && typeof item === "object"){
+            const date = item.date ?? item.day ?? item.d;
+            const text = item.text ?? item.note ?? item.message ?? item.value;
+            add(date, text);
+          }
+        }
+        return out;
+      }
+
+      // B) { notes: [...] }
+      if (data && typeof data === "object" && Array.isArray(data.notes)){
+        return normalizeNotesData(data.notes);
+      }
+
+      // C) Object formats
+      if (!data || typeof data !== "object" || Array.isArray(data)) return out;
+
+      // C1) Flat { "YYYY-MM-DD": "..." }
+      let hasFullDateKey = false;
+      for (const k of Object.keys(data)){
+        if (normalizeDateStr(k)) { hasFullDateKey = true; break; }
+      }
+      if (hasFullDateKey){
+        for (const [k, v] of Object.entries(data)){
+          const nk = normalizeDateStr(k);
+          if (!nk) continue;
+          add(nk, v);
+        }
+        return out;
+      }
+
+      // C2) Month-grouped { "YYYY-MM": { "DD": "..." } }
+      let hasYearMonthKey = false;
+      for (const k of Object.keys(data)){
+        if (normalizeYearMonthStr(k)) { hasYearMonthKey = true; break; }
+      }
+      if (hasYearMonthKey){
+        for (const [ymRaw, daysObj] of Object.entries(data)){
+          const ym = normalizeYearMonthStr(ymRaw);
+          if (!ym) continue;
+          if (!daysObj || typeof daysObj !== "object" || Array.isArray(daysObj)) continue;
+          for (const [dRaw, txt] of Object.entries(daysObj)){
+            const dd = pad2(Number(dRaw));
+            add(`${ym}-${dd}`, txt);
+          }
+        }
+        return out;
+      }
+
+      // C3) Year->Month->Day { "YYYY": { "MM": { "DD": "..." } } }
+      for (const [yRaw, monthsObj] of Object.entries(data)){
+        if (!/^\d{4}$/.test(String(yRaw))) continue;
+        if (!monthsObj || typeof monthsObj !== "object" || Array.isArray(monthsObj)) continue;
+        for (const [mRaw, daysObj] of Object.entries(monthsObj)){
+          const mm = pad2(Number(mRaw));
+          const ym = `${yRaw}-${mm}`;
+          if (!daysObj || typeof daysObj !== "object" || Array.isArray(daysObj)) continue;
+          for (const [dRaw, txt] of Object.entries(daysObj)){
+            const dd = pad2(Number(dRaw));
+            add(`${ym}-${dd}`, txt);
+          }
+        }
+      }
+      return out;
+    }
+
+    // ===== Overrides =====
+    function loadOverrides(){
+      try{
+        const raw = localStorage.getItem(config.overridesStorageKey);
+        if (!raw) return {};
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj === "object" && !Array.isArray(obj)) return obj;
+      }catch(_){}
+      return {};
+    }
+    function persistOverrides(){
+      try{
+        localStorage.setItem(config.overridesStorageKey, JSON.stringify(notesOverride));
+      }catch(_){}
+    }
+    function countOverrides(){
+      return Object.keys(notesOverride).filter(k => String(notesOverride[k] ?? "").trim()).length;
+    }
+    function updateOverrideChip(){
+      overrideChipEl.textContent = `本地覆蓋：${countOverrides()} 筆`;
+    }
+
+    // ===== Notes =====
+    function getNote(dateStr){
+      if (notesOverride[dateStr] !== undefined) return String(notesOverride[dateStr] ?? "");
+      if (notesFile[dateStr] !== undefined) return String(notesFile[dateStr] ?? "");
+      return "";
+    }
+    function hasAnyNote(dateStr){
+      const t = getNote(dateStr);
+      return !!String(t).trim();
+    }
+
+    function saveNote(dateStr, text){
+      const t = String(text ?? "").replace(/\s+$/g, "");
+      if (!t){
+        delete notesOverride[dateStr];
+        persistOverrides();
+        updateOverrideChip();
+        return;
+      }
+      notesOverride[dateStr] = t;
+      persistOverrides();
+      updateOverrideChip();
+    }
+    function clearNote(dateStr){
+      delete notesOverride[dateStr];
+      persistOverrides();
+      updateOverrideChip();
+    }
+
+    function mergeNotesFlat(){
+      // 檔案為底 + 本地覆蓋
+      const merged = { ...notesFile, ...notesOverride };
+      for (const k of Object.keys(merged)){
+        if (!String(merged[k] ?? "").trim()) delete merged[k];
+      }
+      return merged;
+    }
+    function mergeNotesMonthGrouped(){
+      const flat = mergeNotesFlat();
+      const out = {};
+      for (const [dateStr, txt] of Object.entries(flat)){
+        const [y, m, d] = dateStr.split("-");
+        const ym = `${y}-${m}`;
+        out[ym] = out[ym] || {};
+        out[ym][String(Number(d))] = txt; // day 用 "1","2"... 方便手寫；讀取時會自動補零
+      }
+      return out;
+    }
+
+    async function loadNotesJson(){
+      const bust = Date.now();
+      try{
+        const res = await fetch(`${config.notesJsonPath}?v=${bust}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        notesFile = normalizeNotesData(data);
+        noteSourceChipEl.textContent = "JSON：已載入";
+        setStatus(`已讀取 notes.json（${Object.keys(notesFile).length} 筆）`, "ok");
+      }catch(err){
+        notesFile = {};
+        noteSourceChipEl.textContent = "JSON：讀取失敗";
+        setStatus(
+          `讀不到 notes.json：${err?.message ?? err}\n（如果你是用 file:// 開啟，請改用 Live Server 或 python -m http.server）`,
+          "warn"
+        );
+      }
+    }
+
+    // ===== Calendar =====
+    function renderCalendar(y, m){
+      calendarGridEl.innerHTML = "";
+
+      monthTitleEl.textContent = `${y} 年 ${m} 月`;
+      weekStartChipEl.textContent = config.weekStartsOnMonday ? "週一開始" : "週日開始";
+      monthPickerEl.value = `${y}-${pad2(m)}`;
+
+      for (const w of weekdayHeaders()){
+        const el = document.createElement("div");
+        el.className = "dow";
+        el.textContent = w;
+        calendarGridEl.appendChild(el);
+      }
+
+      const offset = firstDayOffset(y, m);
+      for (let i = 0; i < offset; i++){
+        const blank = document.createElement("div");
+        blank.className = "day blank";
+        blank.setAttribute("aria-hidden", "true");
+        calendarGridEl.appendChild(blank);
+      }
+
+      const total = daysInMonth(y, m);
+      const today = new Date();
+      const todayIso = isoDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
+
+      for (let d = 1; d <= total; d++){
+        const dateStr = isoDate(y, m, d);
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "day";
+        btn.textContent = String(d);
+        btn.dataset.date = dateStr;
+        btn.setAttribute("aria-label", formatDateLabel(dateStr));
+
+        if (isWeekend(y, m, d)) btn.classList.add("weekend");
+        if (dateStr === todayIso) btn.classList.add("today");
+        if (hasAnyNote(dateStr)) btn.classList.add("hasNote");
+
+        btn.addEventListener("click", () => selectDate(dateStr));
+        calendarGridEl.appendChild(btn);
+      }
+
+      markSelectedCell();
+    }
+
+    function markSelectedCell(){
+      document.querySelectorAll(".day.selected").forEach(el => el.classList.remove("selected"));
+      const el = document.querySelector(`.day[data-date="${selectedDate}"]`);
+      if (el) el.classList.add("selected");
+    }
+
+    function updateNoteUI(){
+      if (!selectedDate){
+        selectedDateLabelEl.textContent = "選一天";
+        selectedDateMetaEl.textContent = "";
+        noteDisplayEl.textContent = "";
+        noteDisplayEl.dataset.empty = "1";
+        noteEditorEl.value = "";
+        return;
+      }
+
+      selectedDateLabelEl.textContent = formatDateLabel(selectedDate);
+
+      const note = getNote(selectedDate);
+      noteDisplayEl.textContent = note;
+      noteDisplayEl.dataset.empty = note.trim() ? "0" : "1";
+      noteEditorEl.value = (notesOverride[selectedDate] !== undefined) ? String(notesOverride[selectedDate] ?? "") : note;
+
+      const fromLocal = (notesOverride[selectedDate] !== undefined);
+      selectedDateMetaEl.textContent = fromLocal ? "來源：本地覆蓋（你剛剛保存的）" : "來源：notes.json（或尚未寫）";
+
+      // 更新「使用頁」連結（帶日期）
+      const u = new URL("./index.html", location.href);
+      u.searchParams.set("date", selectedDate);
+      u.searchParams.set("y", String(viewYear));
+      u.searchParams.set("m", String(viewMonth));
+      openViewerLink.href = u.toString();
+    }
+
+    function selectDate(dateStr){
+      selectedDate = dateStr;
+      markSelectedCell();
+      updateNoteUI();
+    }
+
+    function addMonths(y, m, delta){
+      const d = new Date(y, m - 1, 1);
+      d.setMonth(d.getMonth() + delta);
+      return { y: d.getFullYear(), m: d.getMonth() + 1 };
+    }
+
+    function goToMonth(y, m){
+      viewYear = y;
+      viewMonth = m;
+
+      if (selectedDate){
+        const [, , dRaw] = selectedDate.split("-");
+        const d = Number(dRaw);
+        const total = daysInMonth(y, m);
+        selectedDate = isoDate(y, m, Math.min(d, total));
+      }else{
+        selectedDate = isoDate(y, m, 1);
+      }
+
+      renderCalendar(viewYear, viewMonth);
+      updateNoteUI();
+    }
+
+    // ===== Actions =====
+    saveBtn.addEventListener("click", () => {
+      if (!selectedDate) return;
+      saveNote(selectedDate, noteEditorEl.value);
+      renderCalendar(viewYear, viewMonth);
+      updateNoteUI();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      if (!selectedDate) return;
+      noteEditorEl.value = "";
+      clearNote(selectedDate);
+      renderCalendar(viewYear, viewMonth);
+      updateNoteUI();
+    });
+
+    prevMonthBtn.addEventListener("click", () => {
+      const next = addMonths(viewYear, viewMonth, -1);
+      goToMonth(next.y, next.m);
+    });
+    nextMonthBtn.addEventListener("click", () => {
+      const next = addMonths(viewYear, viewMonth, +1);
+      goToMonth(next.y, next.m);
+    });
+    monthPickerEl.addEventListener("change", () => {
+      const v = monthPickerEl.value;
+      if (!v) return;
+      const [y, m] = v.split("-").map(Number);
+      if (!y || !m) return;
+      goToMonth(y, m);
+    });
+
+    reloadJsonBtn.addEventListener("click", async () => {
+      await loadNotesJson();
+      renderCalendar(viewYear, viewMonth);
+      updateNoteUI();
+    });
+
+    function downloadJson(filename, obj){
+      const content = JSON.stringify(obj, null, 2);
+      const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 600);
+    }
+
+    exportFlatBtn.addEventListener("click", () => {
+      const merged = mergeNotesFlat();
+      downloadJson("notes.json", merged);
+      setStatus(`已匯出（按日期）notes.json（${Object.keys(merged).length} 筆）`, "ok");
+    });
+
+    exportMonthBtn.addEventListener("click", () => {
+      const merged = mergeNotesMonthGrouped();
+      const count = Object.keys(mergeNotesFlat()).length;
+      downloadJson("notes.json", merged);
+      setStatus(`已匯出（按月份）notes.json（${count} 筆）`, "ok");
+    });
+
+    importJsonBtn.addEventListener("click", () => importFileInput.click());
+
+    importFileInput.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try{
+        const text = await file.text();
+        const data = JSON.parse(text);
+        notesFile = normalizeNotesData(data);
+        noteSourceChipEl.textContent = "JSON：已匯入";
+        setStatus(`已匯入 ${file.name}（${Object.keys(notesFile).length} 筆）`, "ok");
+        renderCalendar(viewYear, viewMonth);
+        updateNoteUI();
+      }catch(err){
+        setStatus(`匯入失敗：${err?.message ?? err}`, "warn");
+      }finally{
+        importFileInput.value = "";
+      }
+    });
+
+    // ===== Init =====
+    (async function init(){
+      const params = new URLSearchParams(location.search);
+      const now = new Date();
+
+      const py = Number(params.get("y")) || now.getFullYear();
+      const pm = Number(params.get("m")) || config.defaultMonth;
+
+      viewYear = py;
+      viewMonth = Math.min(12, Math.max(1, pm));
+
+      notesOverride = loadOverrides();
+      updateOverrideChip();
+
+      const pDate = normalizeDateStr(params.get("date") || "");
+      if (pDate){
+        selectedDate = pDate;
+        const [y, m] = pDate.split("-").map(Number);
+        viewYear = y;
+        viewMonth = m;
+      }else{
+        const isSameMonth = (now.getFullYear() === viewYear) && (now.getMonth() + 1 === viewMonth);
+        selectedDate = isSameMonth ? isoDate(viewYear, viewMonth, now.getDate()) : isoDate(viewYear, viewMonth, 1);
+      }
+
+      noteSourceChipEl.textContent = "JSON：讀取中…";
+      renderCalendar(viewYear, viewMonth);
+      updateNoteUI();
+
+      await loadNotesJson();
+      renderCalendar(viewYear, viewMonth);
+      updateNoteUI();
+
+      setStatus("編輯就編輯，別怕。你寫的我都收著。", "ok");
+    })();
+  </script>
+</body>
+</html>
